@@ -54,7 +54,7 @@ export interface HistoryRecord {
   basePrice: number;
 }
 
-export type ModelType = 'gemini-3-flash';
+export type ModelType = 'gemini-flash-latest';
 
 export interface AgentModelSettings {
   [key: string]: ModelType;

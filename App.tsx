@@ -31,17 +31,17 @@ const STAGE_NAMES = [
 ];
 
 const DEFAULT_MODELS: AgentModelSettings = {
-  [AgentRole.INTELLIGENCE_OFFICER]: 'gemini-3-flash',
-  [AgentRole.FUND_SECRETARY]: 'gemini-3-flash',
-  [AgentRole.FUND_MANAGER]: 'gemini-3-flash',
-  [AgentRole.FUNDAMENTAL_ANALYST]: 'gemini-3-flash',
-  [AgentRole.SENTIMENT_ANALYST]: 'gemini-3-flash',
-  [AgentRole.NEWS_POLICY_ANALYST]: 'gemini-3-flash',
-  [AgentRole.TECHNICAL_ANALYST]: 'gemini-3-flash',
-  [AgentRole.BULL_RESEARCHER]: 'gemini-3-flash',
-  [AgentRole.BEAR_RESEARCHER]: 'gemini-3-flash',
-  [AgentRole.TRADER]: 'gemini-3-flash',
-  [AgentRole.RISK_MANAGER]: 'gemini-3-flash'
+  [AgentRole.INTELLIGENCE_OFFICER]: 'gemini-flash-latest',
+  [AgentRole.FUND_SECRETARY]: 'gemini-flash-latest',
+  [AgentRole.FUND_MANAGER]: 'gemini-flash-latest',
+  [AgentRole.FUNDAMENTAL_ANALYST]: 'gemini-flash-latest',
+  [AgentRole.SENTIMENT_ANALYST]: 'gemini-flash-latest',
+  [AgentRole.NEWS_POLICY_ANALYST]: 'gemini-flash-latest',
+  [AgentRole.TECHNICAL_ANALYST]: 'gemini-flash-latest',
+  [AgentRole.BULL_RESEARCHER]: 'gemini-flash-latest',
+  [AgentRole.BEAR_RESEARCHER]: 'gemini-flash-latest',
+  [AgentRole.TRADER]: 'gemini-flash-latest',
+  [AgentRole.RISK_MANAGER]: 'gemini-flash-latest'
 };
 
 const formatDateTime = (date: Date) => {
@@ -272,7 +272,6 @@ function Dashboard({ terminalKey }: { terminalKey: string }) {
   };
 
   const getCooldownByModel = (modelName: string): number => {
-    // 即使现在都用 flash，保留区分逻辑以应对未来的权限升级
     return modelName.toLowerCase().includes('pro') ? COOLDOWN_PRO : COOLDOWN_FLASH;
   };
 
@@ -301,7 +300,7 @@ function Dashboard({ terminalKey }: { terminalKey: string }) {
 
     try {
       console.log("🚀 启动分析，API Key 验证中...");
-      const stockInfoModel = 'gemini-3-flash';
+      const stockInfoModel = 'gemini-flash-latest';
       const stockInfo = await geminiService.fetchStockInfo(symbol, terminalKey);
       if (shouldStopRef.current) { setIsProcessing(false); return; }
       setBasePrice(stockInfo.price); setStockName(stockInfo.name); initCharts(stockInfo.price);
@@ -317,7 +316,7 @@ function Dashboard({ terminalKey }: { terminalKey: string }) {
         { key: 'POLICY', name: '政策环境检索', prompt: INTELLIGENCE_SUB_TASKS.POLICY }
       ];
 
-      const intelModel = agentModels[AgentRole.INTELLIGENCE_OFFICER] || 'gemini-3-flash';
+      const intelModel = agentModels[AgentRole.INTELLIGENCE_OFFICER] || 'gemini-flash-latest';
       let rawIntelFragments = "";
       let allIntelSources: any[] = [];
       const intelActionId = Math.random().toString(36).substr(2, 9);
@@ -343,7 +342,7 @@ function Dashboard({ terminalKey }: { terminalKey: string }) {
       }
       if (shouldStopRef.current) { setIsProcessing(false); return; }
 
-      const fusionModel = 'gemini-3-flash';
+      const fusionModel = 'gemini-flash-latest';
       setStockName('融合全局情报档案...');
       const uniqueSourcesMap = new Map();
       allIntelSources.forEach(s => {
@@ -383,7 +382,7 @@ function Dashboard({ terminalKey }: { terminalKey: string }) {
       for (let i = 0; i < pipeline.length; i++) {
         if (shouldStopRef.current) break;
         const item = pipeline[i];
-        const targetModel = agentModels[item.role] || 'gemini-3-flash';
+        const targetModel = agentModels[item.role] || 'gemini-flash-latest';
         setCurrentStep(item.step);
         setStockName(`执行智能体: ${item.role}`);
         const actionId = Math.random().toString(36).substr(2, 9);
@@ -407,7 +406,9 @@ function Dashboard({ terminalKey }: { terminalKey: string }) {
           if (i < pipeline.length - 1) await waitCooldown(getCooldownByModel(targetModel));
         } catch (err: any) {
           localActions = localActions.map(a => a.id === actionId ? { ...a, status: 'error' } : a);
-          setActions([...localActions]); throw err;
+          setActions([...localActions]); 
+          // 向上抛出错误以在界面显示
+          throw err;
         }
       }
 
@@ -421,6 +422,11 @@ function Dashboard({ terminalKey }: { terminalKey: string }) {
       }
     } catch (err: any) {
       setErrorMessage(err?.message || "工作流执行异常");
+      notification.error({
+        message: '分析中断',
+        description: err?.message || '未知 API 错误',
+        duration: 10
+      });
     } finally { setIsProcessing(false); setCurrentStep(6); setCooldownLeft(0); shouldStopRef.current = false; }
   };
 
@@ -581,7 +587,7 @@ function Dashboard({ terminalKey }: { terminalKey: string }) {
                       {Object.values(AgentRole).map((role) => (
                          <div key={role} className="p-5 rounded-2xl border border-slate-800 bg-slate-900/40 flex flex-col justify-between h-32">
                             <h4 className="text-slate-200 font-bold text-sm">{role}</h4>
-                            <Select value={agentModels[role]} onChange={(val) => setAgentModels(prev => ({ ...prev, [role]: val as ModelType }))} className="w-full" options={[{ value: 'gemini-3-flash', label: 'Gemini 3 Flash' }]} />
+                            <Select value={agentModels[role]} onChange={(val) => setAgentModels(prev => ({ ...prev, [role]: val as ModelType }))} className="w-full" options={[{ value: 'gemini-flash-latest', label: 'Gemini Flash' }]} />
                          </div>
                       ))}
                    </div>
